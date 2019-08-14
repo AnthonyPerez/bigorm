@@ -1,0 +1,1 @@
+import bigorm._type_compilations
