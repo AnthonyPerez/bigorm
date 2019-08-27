@@ -928,6 +928,103 @@ def test_geojson_serialize():
 
         TestModel9.table_delete()
 
+"""
+Test 10:
+create_from_query
+"""
+
+class TestModel10_1(BigQueryModel):
+
+    __tablename__ = 'unittest.test10_1'
+
+    intr = Column(Integer)
+    double = Column(sqlalchemy.Float)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, TestModel10_1) and
+            self.intr == other.intr and
+            self.double == other.double
+        )
+
+class TestModel10_2(BigQueryModel):
+
+    __tablename__ = 'unittest.test10_2'
+
+    intr = Column(Integer)
+    string = Column(String)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, TestModel10_2) and
+            self.intr == other.intr and
+            self.string == other.string
+        )
+
+class TestModel10_3(BigQueryModel):
+
+    __tablename__ = 'unittest.test10_3'
+
+    intr = Column(Integer)
+    double = Column(sqlalchemy.Float)
+    string = Column(String)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, TestModel10_3) and
+            self.intr == other.intr and
+            self.double == other.double and
+            self.string == other.string
+        )
+
+    def __ne__(self, o):
+        return not self.__eq__(o)
+
+def test_10():
+    with DatabaseContext(project='atlasai-internal-services'):
+        TestModel10_1.table_create()
+        TestModel10_2.table_create()
+        TestModel10_3.table_create()
+
+        instances_1 = [
+            TestModel10_1(intr=1, double=1.0),
+            TestModel10_1(intr=2, double=2.0),
+        ]
+        instances_2 = [
+            TestModel10_2(intr=1, string='1'),
+            TestModel10_2(intr=2, string='2'),
+        ]
+
+        TestModel10_1.create_load_job(instances_1)
+        TestModel10_2.create_load_job(instances_2)
+        
+        join_query = TestModel10_1.query(TestModel10_2.string).join(
+            TestModel10_2, TestModel10_1.intr == TestModel10_2.intr
+        )
+
+        TestModel10_3.create_from_query(join_query)
+
+        instances_3 = TestModel10_3.query().all_as_list()
+        instances_3 = [
+            i for _, i in
+            sorted([(i.intr, i) for i in instances_3])
+        ]
+        expected_instances_3 = [
+            TestModel10_3(intr=1, double=1.0, string='1'),
+            TestModel10_3(intr=2, double=2.0, string='2'),
+        ]
+
+        for actual, expected in zip(instances_3, expected_instances_3):
+            print('Actual')
+            print(actual)
+            print('Expected')
+            print(expected)
+            assert actual == expected
+
+        TestModel10_1.table_delete()
+        TestModel10_2.table_delete()
+        TestModel10_3.table_delete()
+
 
 if __name__ == '__main__':
     pass

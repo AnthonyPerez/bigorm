@@ -162,6 +162,60 @@ class BigQueryCRUDMixin(object):
             raise ValueError('Unrecognized create_method: {}'.format(create_method))
 
     @classmethod
+    def create_from_query(cls, query, flatten_results=True):
+        """
+        Load instances through a query job.
+        The job is asynchronous but this function will wait for the job to complete.
+        See https://cloud.google.com/bigquery/docs/writing-results
+        Note that this method must compile the sql query to a string.
+        It does so using sqlalchemy_query.statement.compile(compile_kwargs={"literal_binds": True}).
+        This will fail for certain queries and should not be used for queries which depend on untrusted input.
+        See https://docs.sqlalchemy.org/en/13/faq/sqlexpressions.html for more information.
+        Args:
+            query (BigQueryQuery):  A query object whose results are
+                to be appended to the table.
+            flatten_results (Optional[bool]): If True, will flatten the query results.
+                Defaults to True.
+        """
+        client = DatabaseContext.get_session().connection().connection._client
+        table_ref = _get_table_ref(cls.__table__.name, client)
+
+        job_config = bigquery_job.QueryJobConfig(
+            destination=table_ref,
+            create_disposition=bigquery_job.CreateDisposition.CREATE_NEVER,
+            write_disposition=bigquery_job.WriteDisposition.WRITE_APPEND,
+            flatten_results=flatten_results,
+            allow_large_results=not flatten_results,
+        )
+
+        dialect = DatabaseContext.get_engine().dialect
+        compiled_sql = query.sqlalchemy_query.statement.compile(
+            dialect=dialect,
+            compile_kwargs={
+                'literal_binds': True,
+            }
+        )
+        raw_sql = str(compiled_sql)
+
+        query_job = client.query(
+            raw_sql,
+            job_config=job_config
+        )
+
+        try:
+            query_job.result()
+        except Exception as e:
+            raise exceptions.DatabaseError('{}\n{}\n{}'.format(
+                query_job.errors,
+                '{}({})'.format(type(e), e),
+                query_job.error_result,
+            ))
+
+        if ((query_job.error_result and len(query_job.error_result) > 0)
+            or (query_job.errors and len(query_job.errors) > 0)):
+            raise exceptions.DatabaseError('{}\n{}'.format(query_job.errors, query_job.error_result))
+
+    @classmethod
     def parse_from_pandas(cls, df, relabel=None,
                           if_exists='append'):
         """
