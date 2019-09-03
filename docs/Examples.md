@@ -125,6 +125,7 @@ with DatabaseContext(project='example_project'):
     )
     examples = Example.parse_from_geojson(...)
     Example.create_from_geojson(...)
+    Example.create_from_query(...)
 ```
 
 See https://github.com/AtlasAIPBC/datasets/blob/anthony_qa_pipeline/datasets/abstract_models.py
