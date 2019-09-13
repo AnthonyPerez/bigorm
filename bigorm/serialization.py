@@ -312,13 +312,23 @@ def bigquery_serialize_datetime(py_datetime):
     Returns:
         (str): The Serialized date.
     """
+    # deserialize with datetime.strptime(serialized_str + '00', '%Y-%m-%d %H:%M:%S.%f')
     return py_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
 
 
-'''
-def bigquery_deserialize_datetime(serialized_str):
-    return datetime.strptime(serialized_str + '00', '%Y-%m-%d %H:%M:%S.%f')
-'''
+def bigquery_serialize_date(py_date):
+    """
+    Convert a python date object into a serialized format that Bigquery accepts.
+    Accurate to days.
+    Bigguery format: 'YYYY-[M]M-[D]D'
+    https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types
+
+    Args:
+        py_date (datetime.date):  The date to convert.
+    Returns:
+        (str): The Serialized date.
+    """
+    return py_date.strftime('%Y-%m-%d')
 
 
 def bigquery_json_serialize_default(value):
@@ -331,6 +341,8 @@ def bigquery_json_serialize_default(value):
     """
     if isinstance(value, datetime.datetime):
         return bigquery_serialize_datetime(value)
+    if isinstance(value, datetime.date):
+        return bigquery_serialize_date(value)
     elif isinstance(value, PythonEnum):
         return _json_dump(value.value)
     else:

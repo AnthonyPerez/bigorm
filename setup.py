@@ -13,7 +13,7 @@ setup(
     name='bigorm',
     packages=find_packages(exclude=['tests', 'docs']),
     description='BigQuery ORM using sqlalchemy',
-    version='0.0.1',
+    version='0.0.2',
     url='',
     author='Anthony Perez',
     author_email='anthonyp@alumni.stanford.edu',
