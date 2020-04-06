@@ -73,7 +73,7 @@ def convert_geovalue_to_geojson_str(value, is_wkt=False):
     if len(keys) != 2 or ('type' not in keys) or ('coordinates' not in keys):
         raise ValueError(
             'BigQuery only understands geojsons with "type" and '
-            '"coordinate" properties.  Found keys: {}'.format(keys)
+            '"coordinates" properties.  Found keys: {}'.format(keys)
         )
 
     return json.dumps(geojson)
