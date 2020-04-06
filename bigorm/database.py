@@ -15,7 +15,7 @@ class DatabaseContextError(RuntimeError):
 """
 Once an engine is created is is not destroyed until the program itself exits.
 Engines are used to produce a new session when a context is entered.
-When a context is existed, the session for that context is destroyed.
+When a context is exited, the session for that context is destroyed.
 """
 global_database_context = threading.local()
 global_database_context.engines = {}

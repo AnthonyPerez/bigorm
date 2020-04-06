@@ -981,7 +981,7 @@ class TestModel10_3(BigQueryModel):
         return not self.__eq__(o)
 
 def test_10():
-    with DatabaseContext(project='atlasai-internal-services'):
+    with DatabaseContext(project=UNIT_TEST_PROJECT):
         TestModel10_1.table_create()
         TestModel10_2.table_create()
         TestModel10_3.table_create()
@@ -1024,6 +1024,43 @@ def test_10():
         TestModel10_1.table_delete()
         TestModel10_2.table_delete()
         TestModel10_3.table_delete()
+
+
+"""
+Test 11:
+serialize datetime.date
+"""
+
+class TestModel11(BigQueryModel):
+
+    __tablename__ = 'unittest.test11'
+
+    intr = Column(Integer)
+    date = Column(sqlalchemy.Date)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, TestModel11) and
+            self.intr == other.intr and
+            self.date == other.date
+        )
+
+
+def test_11():
+    with DatabaseContext(project=UNIT_TEST_PROJECT):
+        inst = TestModel11(intr=1, date=datetime.date(2019, 1, 1))
+        inst2 = TestModel11(intr=1, date=None)
+
+        inst.__repr__()  # This presents objects in serialized form.
+        inst.serialize_as_json()
+
+        inst2.__repr__()  # This presents objects in serialized form.
+        inst2.serialize_as_json()
+
+        TestModel11.table_create()
+        TestModel11.create_load_job([inst, inst2])
+        print(TestModel11.query().all_as_list())
+        TestModel11.table_delete()
 
 
 if __name__ == '__main__':
