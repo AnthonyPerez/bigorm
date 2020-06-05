@@ -7,6 +7,7 @@ REQUIRED_PACKAGES = [
     'pandas == 0.24.1',
     'sqlalchemy-utils == 0.33.11',
     'shapely == 1.6.4.post2',
+    'enum34 == 1.1.10;python_version < "3.4"',
 ]
 
 setup(
