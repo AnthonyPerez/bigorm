@@ -1,1 +1,3 @@
-UNIT_TEST_PROJECT = raise NotImplementedError
+import os
+
+UNIT_TEST_PROJECT = os.environ['BIGORM_UNIT_TEST_PROJECT']
