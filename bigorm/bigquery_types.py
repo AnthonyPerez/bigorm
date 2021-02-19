@@ -96,40 +96,41 @@ class GeographyWKT(UserDefinedType):
         return func.ST_AsText(col, type_=self)
 
 
+class _GeoJsonGeometryFormat(dict):
+
+    @staticmethod
+    def __recusrive_list_to_tuple(val):
+        if isinstance(val, list) or isinstance(val, tuple):
+            return tuple(
+                _GeoJsonGeometryFormat.__recusrive_list_to_tuple(sub_val)
+                for sub_val in val
+            )
+        return val
+
+    def __key(self):
+        return (
+            self['type'],
+            _GeoJsonGeometryFormat.__recusrive_list_to_tuple(self['coordinates'])
+        )
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        if isinstance(other, _GeoJsonGeometryFormat):
+            return self.__key() == other.__key()
+        return (
+            isinstance(other, dict)
+            and super(
+                _GeoJsonGeometryFormat, self
+            ).__eq__(other)
+        )
+
+
 class GeographyGeoJson(UserDefinedType):
     """
     Expects things as {"type": "Point","coordinates": [-10.986328125, 27.049341619870376]}
     """
-    class GeoJsonGeometryFormat(dict):
-
-        @staticmethod
-        def __recusrive_list_to_tuple(val):
-            if isinstance(val, list) or isinstance(val, tuple):
-                return tuple(
-                    GeographyGeoJson.GeoJsonGeometryFormat.__recusrive_list_to_tuple(sub_val)
-                    for sub_val in val
-                )
-            return val
-
-        def __key(self):
-            return (
-                self['type'],
-                GeographyGeoJson.GeoJsonGeometryFormat.
-                    __recusrive_list_to_tuple(self['coordinates'])
-            )
-
-        def __hash__(self):
-            return hash(self.__key())
-
-        def __eq__(self, other):
-            if isinstance(other, GeographyGeoJson.GeoJsonGeometryFormat):
-                return self.__key() == other.__key()
-            return (
-                isinstance(other, dict)
-                and super(
-                    GeographyGeoJson.GeoJsonGeometryFormat, self
-                ).__eq__(other)
-            )
 
     def get_col_spec(self):
         return "GEOGRAPHY"
@@ -150,7 +151,7 @@ class GeographyGeoJson(UserDefinedType):
             value = json.loads(value)
             if value is None:
                 return None
-            return GeographyGeoJson.GeoJsonGeometryFormat(
+            return _GeoJsonGeometryFormat(
                 value
             )
         return process

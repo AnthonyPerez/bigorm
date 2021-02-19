@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 REQUIRED_PACKAGES = [
-    'google-cloud-bigquery == 1.9.0',
-    'pybigquery == 0.4.9',
-    'SQLAlchemy == 1.2.17',
-    'pandas == 0.24.1',
-    'sqlalchemy-utils == 0.33.11',
-    'shapely == 1.6.4.post2',
+    'google-cloud-bigquery == 1.27.2',
+    'pybigquery == 0.4.15',
+    'SQLAlchemy == 1.3.19',
+    'pandas == 0.24.2',
+    'sqlalchemy-utils == 0.36.8',
+    'shapely == 1.7.1',
     'enum34 == 1.1.10;python_version < "3.4"',
 ]
 
@@ -14,7 +14,7 @@ setup(
     name='bigorm',
     packages=find_packages(exclude=['tests', 'docs']),
     description='BigQuery ORM using sqlalchemy',
-    version='0.0.2',
+    version='0.0.3',
     url='',
     author='Anthony Perez',
     author_email='anthonyp@alumni.stanford.edu',

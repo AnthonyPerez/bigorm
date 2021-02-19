@@ -18,8 +18,8 @@ Engines are used to produce a new session when a context is entered.
 When a context is exited, the session for that context is destroyed.
 """
 global_database_context = threading.local()
-global_database_context.engines = {}
-global_database_context.sessions = []
+
+
 class DatabaseContext(object):
     """
     This is fairly complicated.  Follow these rules:
@@ -32,8 +32,20 @@ class DatabaseContext(object):
         with DatabaseContext():
     """
     @classmethod
+    def __get_engines(_):
+        if not hasattr(global_database_context, 'engines'):
+            global_database_context.engines = {}
+        return global_database_context.engines
+
+    @classmethod
+    def __get_sessions(_):
+        if not hasattr(global_database_context, 'sessions'):
+            global_database_context.sessions = []
+        return global_database_context.sessions
+
+    @classmethod
     def get_session(_):
-        sessions = global_database_context.sessions
+        sessions = DatabaseContext.__get_sessions()
         if len(sessions) == 0:
             raise DatabaseContextError('Session not established, did you create a DatabaseContext?')
 
@@ -42,7 +54,7 @@ class DatabaseContext(object):
 
     @classmethod
     def get_engine(_):
-        sessions = global_database_context.sessions
+        sessions = DatabaseContext.__get_sessions()
         if len(sessions) == 0:
             raise DatabaseContextError('Session not established, did you create a DatabaseContext?')
 
@@ -51,7 +63,7 @@ class DatabaseContext(object):
 
     @classmethod
     def is_in_context(_):
-        sessions = global_database_context.sessions
+        sessions = DatabaseContext.__get_sessions()
         return len(sessions) > 0
 
     def __init__(self, *args, **kwargs):
@@ -63,22 +75,22 @@ class DatabaseContext(object):
 
     def __enter__(self):
         key = (tuple(self.args), tuple(sorted(list(self.kwargs.items()))))
-        engine, Session = global_database_context.engines.get(key, (None, None))
+        engine, Session = DatabaseContext.__get_engines().get(key, (None, None))
         if engine is None:
             engine = sqlalchemy.create_engine(
                 *self.args,
                 **self.kwargs
             )
             Session = sqlalchemy.orm.sessionmaker(bind=engine)
-            global_database_context.engines[key] = (engine, Session)
+            DatabaseContext.__get_engines()[key] = (engine, Session)
 
         new_session = Session()
-        global_database_context.sessions.append(
+        DatabaseContext.__get_sessions().append(
             (engine, new_session)
         )
 
     def __exit__(self, exception_type, exception_value, traceback):
-        _, session = global_database_context.sessions.pop()
+        _, session = DatabaseContext.__get_sessions().pop()
         try:
             if exception_type is not None:
                 # There was an exception, roll back.
