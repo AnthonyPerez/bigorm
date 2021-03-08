@@ -5,7 +5,6 @@ REQUIRED_PACKAGES = [
     'pybigquery == 0.4.15',
     'SQLAlchemy == 1.3.19',
     'pandas == 0.24.2',
-    'sqlalchemy-utils == 0.36.8',
     'shapely == 1.7.1',
     'enum34 == 1.1.10;python_version < "3.4"',
 ]
@@ -14,7 +13,7 @@ setup(
     name='bigorm',
     packages=find_packages(exclude=['tests', 'docs']),
     description='BigQuery ORM using sqlalchemy',
-    version='0.0.4',
+    version='0.0.5',
     url='',
     author='Anthony Perez',
     author_email='anthonyp@alumni.stanford.edu',
