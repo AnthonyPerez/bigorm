@@ -235,7 +235,7 @@ with DatabaseContext(project='example_project'):
         example_float_property=1.3
     ).update({
         'example_float_property': Example.example_float_property + 3
-    }
+    })
 ```
 
 If you need to update individual rows more carefully, you must

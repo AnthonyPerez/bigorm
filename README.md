@@ -1,3 +1,3 @@
 # bigorm
 
-See Introduction.md in docs folder.
+See `Examples.md` in docs folder.
