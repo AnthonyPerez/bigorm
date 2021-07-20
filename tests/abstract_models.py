@@ -11,8 +11,9 @@ import sqlalchemy
 import pandas as pd
 
 from bigorm.database import BigQueryDatabaseContext as DatabaseContext
-from bigorm.abstract_models import BigQueryModel, BigQueryColumn as Column
+from bigorm.abstract_models import BigQueryModel, BigQueryReadOnlyModel, BigQueryColumn as Column
 from bigorm.bigquery_types import GeographyWKT, GeographyGeoJson
+from bigorm.abstract_models import BigQueryOrmError
 
 from tests import UNIT_TEST_PROJECT
 
@@ -1061,6 +1062,103 @@ def test_11():
         TestModel11.create_load_job([inst, inst2])
         print(TestModel11.query().all_as_list())
         TestModel11.table_delete()
+
+
+"""
+Test 12:
+ReadOnly Model
+"""
+
+class TestModel12(BigQueryModel):
+
+    __tablename__ = 'unittest.test12'
+
+    id = Column(Integer)
+    column1 = Column(Integer, nullable=False, default=1)
+
+    def __repr__(self):
+        return 'TestModel(id={}, column1={})'.format(
+            self.id, self.column1
+        )
+
+    def __eq__(self, other):
+        return (
+            self.id == other.id
+            and self.column1 == other.column1
+        )
+
+class ReadOnlyTestModel12(BigQueryReadOnlyModel):
+
+    __tablename__ = 'test12'
+
+    id = Column(Integer)
+    column1 = Column(Integer, nullable=False, default=1)
+
+    def __repr__(self):
+        return 'ReadOnlyTestModel(id={}, column1={})'.format(
+            self.id, self.column1
+        )
+
+    def __eq__(self, other):
+        return (
+            self.id == other.id
+            and self.column1 == other.column1
+        )
+
+def test12():
+    with DatabaseContext(project=UNIT_TEST_PROJECT):
+        inst = TestModel12(id=1)
+        inst2 = TestModel12(id=2)
+        inst3 = TestModel12(id=3)
+
+        TestModel12.table_create()
+    try:
+
+        with DatabaseContext(project=UNIT_TEST_PROJECT):
+            TestModel12.create_load_job([inst, inst2])
+            print(TestModel12.query().all_as_list())
+
+        with DatabaseContext(project=UNIT_TEST_PROJECT, default_dataset='unittest'):
+            print(ReadOnlyTestModel12.query().all_as_list())
+
+            try:
+                ReadOnlyTestModel12.create_load_job([inst3])
+                raise RuntimeError("create_load_job")
+            except AttributeError:
+                pass
+
+            try:
+                ReadOnlyTestModel12.create([inst3])
+                raise RuntimeError("create")
+            except AttributeError:
+                pass
+
+            try:
+                ReadOnlyTestModel12.query().update({'column1': 2})
+                raise RuntimeError("update")
+            except BigQueryOrmError:
+                pass
+
+            try:
+                ReadOnlyTestModel12.query().delete()
+                raise RuntimeError("delete")
+            except BigQueryOrmError:
+                pass
+
+            try:
+                ReadOnlyTestModel12.table_create()
+                raise RuntimeError("table_create")
+            except AttributeError:
+                pass
+
+            try:
+                ReadOnlyTestModel12.table_delete()()
+                raise RuntimeError("table_delete")
+            except AttributeError:
+                pass
+    finally:
+        with DatabaseContext(project=UNIT_TEST_PROJECT):
+            TestModel12.table_delete()
 
 
 if __name__ == '__main__':
