@@ -63,10 +63,10 @@ def _add_suffixes(element, compiler, **kw):
         cluster_clause = '\n{}\n'.format(cluster_clause)
         text += cluster_clause
 
-    return text 
+    return text
 
 
-class BigQueryTableCRUDMixin(object):
+class BigQueryTableReadOnlyMixin(object):
 
     @classmethod
     def table_get(cls):
@@ -92,6 +92,9 @@ class BigQueryTableCRUDMixin(object):
         except google.api_core.exceptions.NotFound:
             return False
         return True
+
+
+class BigQueryTableCRUDMixin(BigQueryTableReadOnlyMixin):
 
     @classmethod
     def table_create(cls):

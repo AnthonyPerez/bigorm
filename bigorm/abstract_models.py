@@ -12,7 +12,7 @@ from google.cloud.bigquery.dbapi.cursor import job, exceptions
 
 from bigorm.database import DatabaseContext
 from bigorm.serialization import JsonSerializableOrmMixin, _dicts_to_geojson
-from bigorm.tables import BigQueryTableCRUDMixin
+from bigorm.tables import BigQueryTableCRUDMixin, BigQueryTableReadOnlyMixin
 from bigorm.utils import _get_table_ref
 
 
@@ -673,6 +673,23 @@ class BigQueryQuery(object):
         raise BigQueryOrmError('Not Supported')
 
 
+class ReadOnlyBigQueryQuery(BigQueryQuery):
+
+    def update(self, *args, **kwargs):
+        """
+        Raises:
+            BigQueryOrmError: Always, update is not supported in readonly mode.
+        """
+        raise BigQueryOrmError("Update not supported in read-only table.")
+
+    def delete(self, *args, **kwargs):
+        """
+        Raises:
+            BigQueryOrmError: Always, delete is not supported in readonly mode.
+        """
+        raise BigQueryOrmError("Delete not supported in read-only table.")
+
+
 class BigQueryQueryMixin(object):
 
     @classmethod
@@ -736,6 +753,48 @@ class BigQueryQueryMixin(object):
         return cls.query_empty(*args, **kwargs)._query_raw(sql_statement)
 
 
+class ReadOnlyBigQueryQueryMixin(BigQueryQueryMixin):
+
+    @classmethod
+    def query(cls, *args, **kwargs):
+        """
+        https://docs.sqlalchemy.org/en/latest/orm/query.html#sqlalchemy.orm.query.Query
+
+        Selects all columns of the class and any additional
+        ORM objects requested through arguments.
+
+        Args:
+            *args (Union[Column, BigQueryModel]):
+                Columns or classes matching what the sql statement is expected to return
+                (e.g. what is selects).
+            **kwargs (Any):  Passed to sqlalchemy.orm.query
+        Returns
+            (ReadOnlyBigQueryQuery):  A query object that wraps sqlalchemy.orm.Query.
+        """
+        return ReadOnlyBigQueryQuery(
+            DatabaseContext.get_session().query(cls, *args, **kwargs)
+        )
+
+    @classmethod
+    def query_empty(cls, *args, **kwargs):
+        """
+        https://docs.sqlalchemy.org/en/latest/orm/query.html#sqlalchemy.orm.query.Query
+
+        Selects no columns by default.
+
+        Args:
+            *args (Union[Column, BigQueryModel]):
+                Columns or classes matching what the sql statement is expected to return
+                (e.g. what is selects).
+            **kwargs (Any):  Passed to sqlalchemy.orm.query
+        Returns
+            (ReadOnlyBigQueryQuery):  A query object that wraps sqlalchemy.orm.Query.
+        """
+        return ReadOnlyBigQueryQuery(
+            DatabaseContext.get_session().query(*args, **kwargs)
+        )
+
+
 class BigQueryColumn(sa.Column):
 
     def __init__(self, *args, **kwargs):
@@ -752,4 +811,9 @@ class BigQueryColumn(sa.Column):
 
 class BigQueryModel(BigQueryCRUDMixin, BigQueryQueryMixin, JsonSerializableOrmMixin, BigQueryTableCRUDMixin, Base):
     """Base model class that includes CRUD convenience methods."""
+    __abstract__ = True
+
+
+class BigQueryReadOnlyModel(ReadOnlyBigQueryQueryMixin, JsonSerializableOrmMixin, BigQueryTableReadOnlyMixin, Base):
+    """Base model class that includes Read Only convenience methods."""
     __abstract__ = True
