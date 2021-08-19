@@ -750,7 +750,7 @@ class BigQueryQueryMixin(object):
                 with returned columns converted to the appropriate representation
                 in the ORM or in their raw values (matching *args).
         """
-        return cls.query_empty(*args, **kwargs)._query_raw(sql_statement)
+        return cls.query_empty(*args, **kwargs).query_raw(sql_statement)
 
 
 class ReadOnlyBigQueryQueryMixin(BigQueryQueryMixin):
